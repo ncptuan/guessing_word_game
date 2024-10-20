@@ -1,4 +1,7 @@
+import 'dart:math';
+
 import 'package:guess_word_game/app_dependencies.dart';
+import 'package:guess_word_game/constant.dart';
 import 'package:guess_word_game/core/core.dart';
 import 'package:guess_word_game/models/model.dart';
 import 'package:guess_word_game/models/screen_data_model/screen_data_model.dart';
@@ -10,6 +13,8 @@ class ChatBloc extends BaseCubit<ChatDataModel, ChatDataParam> {
           InitState(),
           model: ChatDataModel(
             secretWord: "",
+            resultCorrectFromBE: [],
+            resultPresentFromBE: [],
           ),
           param: ChatDataParam(
             guessWord: "",
@@ -22,13 +27,103 @@ class ChatBloc extends BaseCubit<ChatDataModel, ChatDataParam> {
 
   @override
   Future<void> initState() async {
-    // TODO: implement initState
-    final value = await sendGuessWordToBE(
-      word: "guess",
-      length: param?.wordLength ?? 5,
-      seed: param?.seed ?? 1,
-    );
+    Random random = Random();
+    do {
+      model?.resultCorrectFromBE = [];
+      model?.resultPresentFromBE = [];
+      param?.seed = (random.nextInt(100) + 1);
+      await findApiResult();
+    } while (
+        (model?.resultPresentFromBE.length ?? 1) != (param?.wordLength ?? 1));
+    if ((model?.resultCorrectFromBE.length ?? 1) < (param?.wordLength ?? 1)) {
+      await shuffle();
+    }
+    model?.resultCorrectFromBE
+        .sort((a, b) => (a.slot ?? 0).compareTo((b.slot ?? 1)));
+    model?.secretWord = model?.resultCorrectFromBE
+            .map((word) => (word.guess ?? ""))
+            .toList()
+            .join() ??
+        "work";
     emit(LoadedState(model, param));
+  }
+
+//  Handle auto detach guess word from API
+  Future<void> shuffle() async {
+    final listPresent = model?.resultPresentFromBE ?? [];
+    final listCorrect = model?.resultCorrectFromBE ?? [];
+    do {
+      listPresent.shuffle();
+      List<String> presentWords =
+          listPresent.map((word) => (word.guess ?? "")).toList();
+      final decodeToString = presentWords.join();
+      final backEndResult = await sendGuessWordToBE(
+        word: decodeToString,
+        length: (param?.wordLength ?? 5),
+        seed: (param?.seed ?? 1),
+      );
+      for (var element in backEndResult) {
+        bool isAdd = true;
+        for (var i = 0; i < listCorrect.length; i++) {
+          if ((element.slot == listCorrect[i].slot) ||
+              element.result != ResultWordEnum.correct) {
+            isAdd = false;
+            break;
+          }
+        }
+        if (isAdd && (element.result == ResultWordEnum.correct)) {
+          model?.resultCorrectFromBE.add(element);
+        }
+      }
+    } while (
+        (model?.resultCorrectFromBE.length ?? 1) < (param?.wordLength ?? 1));
+  }
+
+  Future<void> findApiResult() async {
+    for (var i = 0; i < 26; i++) {
+      final int position = i * (param?.wordLength ?? 1);
+      if (position > 26) {
+        break;
+      }
+      final guessWord = autoGenGuessWord(position);
+      print(guessWord);
+      if (guessWord.isNotEmpty) {
+        final decodeToString = guessWord.join();
+        final backEndResult = await sendGuessWordToBE(
+          word: decodeToString,
+          length: (param?.wordLength ?? 5),
+          seed: (param?.seed ?? 1),
+        );
+        if (backEndResult.isNotEmpty) {
+          backEndResult.forEach((element) {
+            if (element.result != ResultWordEnum.absent) {
+              if (!(model?.resultPresentFromBE.contains(element) ?? true)) {
+                model?.resultPresentFromBE.add(element);
+              }
+            }
+            if (element.result == ResultWordEnum.correct) {
+              model?.resultCorrectFromBE.add(element);
+            }
+          });
+        }
+      }
+    }
+  }
+
+  List<String> autoGenGuessWord(int position) {
+    final List<String> listTemplateWord = Constant.listTemplateWord;
+    final endPosition = position + (param?.wordLength ?? 1);
+    List<String> getListGuess = [];
+    for (var i = position; i < listTemplateWord.length; i++) {
+      if (i >= endPosition) {
+        break;
+      }
+      getListGuess.add(listTemplateWord[i]);
+    }
+    while (getListGuess.length < (param?.wordLength ?? 0)) {
+      getListGuess.add("z");
+    }
+    return getListGuess;
   }
 
   Future<List<RandomWordResponse>> sendGuessWordToBE({

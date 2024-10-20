@@ -24,6 +24,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    bloc.param?.wordLength = widget.wordLength;
     bloc.initState();
   }
 
@@ -47,7 +48,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final param = state.param as ChatDataParam;
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Word Guessing Game"),
+        title: Text(model.secretWord),
         leading: IconButton(
           onPressed: () {
             Navigator.of(context).pop();

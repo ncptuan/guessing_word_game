@@ -1,7 +1,13 @@
+import 'package:guess_word_game/models/reponse_model_data/reponse_model_data.dart';
+
 class ChatDataModel {
   String secretWord;
+  List<RandomWordResponse> resultCorrectFromBE;
+  List<RandomWordResponse> resultPresentFromBE;
   ChatDataModel({
     this.secretWord = "",
+    required this.resultCorrectFromBE,
+    required this.resultPresentFromBE,
   });
 }
 
