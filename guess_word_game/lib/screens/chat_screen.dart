@@ -1,12 +1,12 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:guess_word_game/app_dependencies.dart';
 import 'package:guess_word_game/bloc/chat_screen_bloc/chat_screen_bloc.dart';
 import 'package:guess_word_game/models/screen_data_model/screen_data_model.dart';
 
-import '../core/core.dart';
-import '../widget/widget.dart';
+import '../../app_dependencies.dart';
+import '../../core/core.dart';
+import '../../widget/widget.dart';
 
 @RoutePage()
 class ChatScreen extends StatefulWidget {
@@ -14,7 +14,7 @@ class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key, required this.wordLength});
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  _ChatScreenState createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
@@ -22,7 +22,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     bloc.param?.wordLength = widget.wordLength;
     bloc.initState();
@@ -30,7 +29,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer(
+    return BlocConsumer<ChatBloc, BaseState>(
       bloc: bloc,
       builder: (context, state) {
         if (state is LoadedState) {
@@ -45,7 +44,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget buildContent(BuildContext context, LoadedState state) {
     final model = state.model as ChatDataModel;
-    final param = state.param as ChatDataParam;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(model.secretWord),
@@ -53,27 +52,54 @@ class _ChatScreenState extends State<ChatScreen> {
           onPressed: () {
             Navigator.of(context).pop();
           },
-          icon: const Icon(
-            Icons.arrow_back,
-          ),
+          icon: const Icon(Icons.arrow_back),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              "Welcome to the Word Guessing Game",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: model.message.length,
+              reverse: true,
+              itemBuilder: (context, index) {
+                final message = model.message[index];
+                return ListTile(
+                  title: Text(message.keys.first == 'user'
+                      ? "You: ${message['user']}"
+                      : "Bot: ${message['bot']}"),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: model.textController,
+                    decoration: const InputDecoration(
+                      hintText: 'Enter your guess...',
+                    ),
+                  ),
+                ),
+                (model.isUserWin)
+                    ? IconButton(
+                        icon: const Icon(Icons.done),
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                      )
+                    : IconButton(
+                        icon: const Icon(Icons.send),
+                        onPressed: () {
+                          bloc.sendMessage(model.textController.text);
+                        },
+                      ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,10 +1,9 @@
 import 'dart:math';
 
-import 'package:guess_word_game/app_dependencies.dart';
+import 'package:flutter/material.dart';
 import 'package:guess_word_game/constant.dart';
 import 'package:guess_word_game/core/core.dart';
 import 'package:guess_word_game/models/model.dart';
-import 'package:guess_word_game/models/screen_data_model/screen_data_model.dart';
 import 'package:guess_word_game/services/services.dart';
 
 class ChatBloc extends BaseCubit<ChatDataModel, ChatDataParam> {
@@ -15,6 +14,8 @@ class ChatBloc extends BaseCubit<ChatDataModel, ChatDataParam> {
             secretWord: "",
             resultCorrectFromBE: [],
             resultPresentFromBE: [],
+            message: [],
+            textController: TextEditingController(),
           ),
           param: ChatDataParam(
             guessWord: "",
@@ -45,6 +46,49 @@ class ChatBloc extends BaseCubit<ChatDataModel, ChatDataParam> {
             .toList()
             .join() ??
         "work";
+    emit(LoadedState(model, param));
+  }
+
+  void sendMessage(String text) {
+    if (text.isEmpty) return;
+    model?.message.insert(0, {"user": text});
+    model?.textController.clear();
+    model?.numberOfGuess++;
+    checkGuess(text);
+    emit(LoadedState(model, param));
+  }
+
+  void checkGuess(String guess) {
+    if (guess.toLowerCase() == model?.secretWord.toLowerCase()) {
+      final botResponse =
+          "Correct! The word was '${model?.secretWord}'. You guessed it in ${model?.numberOfGuess} attempts!";
+      model?.message.insert(0, {"bot": botResponse});
+      model?.isUserWin = true;
+
+      return;
+    } else {
+      if ((model?.numberOfGuess ?? 1) >= 3) {
+        _giveHint();
+      } else {
+        const botResponse = "Incorrect guess. Try again!";
+        model?.message.insert(0, {"bot": botResponse});
+      }
+      emit(LoadedState(model, param));
+      return;
+    }
+  }
+
+  void _giveHint() {
+    String botResponse;
+    if (model?.numberOfGuess == 3) {
+      botResponse = "Hint: The word starts with '${model?.secretWord[0]}'.";
+    } else if (model?.numberOfGuess == 5) {
+      botResponse =
+          "Hint: The word end with '${model?.secretWord[((model?.resultCorrectFromBE.length ?? 0) - 1)]}'.";
+    } else {
+      botResponse = "You're getting closer!";
+    }
+    model?.message.insert(0, {"bot": botResponse});
     emit(LoadedState(model, param));
   }
 
