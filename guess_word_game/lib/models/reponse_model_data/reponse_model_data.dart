@@ -1,0 +1,1 @@
+export 'random_word_response.dart';
