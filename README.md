@@ -1,4 +1,4 @@
-<img width="1440" alt="image" src="https://github.com/user-attachments/assets/14f53ddb-5c6c-4cd8-92fb-3f68362b483f">Please use flutter 3.24.1
+Please use flutter 3.24.1
 
 
 
