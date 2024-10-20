@@ -3,11 +3,20 @@ import 'package:flutter/material.dart';
 
 @RoutePage()
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  final int wordLength;
+  const ChatScreen({super.key, required this.wordLength});
 
   @override
-  State<StatefulWidget> createState() {
-    // TODO: implement createState
-    throw UnimplementedError();
+  State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends State<ChatScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: Text("Chat screen"),
+      ),
+    );
   }
 }
